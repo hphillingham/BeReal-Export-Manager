@@ -1,46 +1,36 @@
-# BeReal Exporter
+# BeReal Export Manager
 
-This python script doesn't export photos and realmojis from the social media platform BeReal directly - for that, you have to make a request to BeReal. See [this Reddit post](https://www.reddit.com/r/bereal_app/comments/19dl0yk/experiencetutorial_for_exporting_all_bereal/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button) for more information.
+A Python script to tag BeReal export images with proper EXIF metadata and create composite images for conversations.
 
-It processes the data from the BeReal export and exports the images with added metadata, such as the original date and location. Now supports posts, memories, realmojis, and conversation images with parallel processing for speed. Also has interactive modes for when you want to manually choose which camera is which for conversation images.
+Forked from [SoPat712/BeReal-Export-Manager](https://github.com/SoPat712/BeReal-Export-Manager).
 
-I'm gonna be upfront and say it's BeReal's fault the dates are wonky on the output files, idk why they chose to save the time like this:
+Improved with:
 
-        "takenTime": "2024-12-24T01:27:16.726Z",
-        "berealMoment": "2024-12-23T22:39:05.327Z",
+- True multiprocessing, using Processes instead of Threads
+- Allowing a default timezone to be set for images missing location data
 
-instead of the way everyone else always does it with UNIX Epoch time, but it makes it pretty hard to find out what time the picture was taken, and to properly tag the photos with the correct time. The script now handles timezone conversion automatically using GPS coordinates when available, falling back to America/New_York timezone.
+---
 
-## Installation
+## Setup
 
-1. Clone the repository:
+1. Install the required Python packages:
     ```sh
-    git@github.com:SoPat712/BeReal-Export-Manager.git 
-    cd BeReal-Export-Manager
+    uv venv && uv sync
     ```
+2. Ensure you have `exiftool` installed on your system and set it up as a `PATH` variable. You can download it [here](https://exiftool.org/).
 
-2. Install the required Python packages:
-    ```sh
-    pip install -r requirements.txt
-    ```
-
-3. Ensure you have `exiftool` installed on your system and set it up as a `PATH` variable. You can download it [here](https://exiftool.org/).
-
-4. Put your BeReal export folder in the `input` directory. The script will automatically find it.
+3. Create an `input` directory in the same directory as `bereal_exporter.py` and put the BeReal export in it.
 
 ## Usage
 
-Put your BeReal export in the `input` folder and run:
 ```sh
 python bereal_exporter.py [OPTIONS]
 ```
 
-The script automatically finds your export folder and processes everything in parallel for speed.
-
-## Options
+## Args
 
 - `-v, --verbose`: Explain what is being done.
-- `-t, --timespan`: Exports the given timespan. 
+- `-t, --timespan`: Exports the given timespan.
   - Valid format: `DD.MM.YYYY-DD.MM.YYYY`.
   - Wildcards can be used: `DD.MM.YYYY-*`.
 - `-y, --year`: Exports the given year.
@@ -55,8 +45,10 @@ The script automatically finds your export folder and processes everything in pa
 - `--conversations-only`: Export only conversations (for debugging).
 - `--interactive-conversations`: Manually choose front/back camera for conversation images.
 - `--web-ui`: Use web UI for interactive conversation selection (requires `--interactive-conversations`).
+- `--default-timezone`: Set default timezone for images missing location data (defaults to America/New_York if not specified).
 
-The script automatically handles timezone conversion using GPS coordinates when available, falling back to America/New_York. It creates composite images with the back camera as the main image and front camera overlaid in the corner with rounded edges and a black border, just like BeReal shows them.
+The script automatically handles timezone conversion using GPS coordinates when available, falling back to the provided timezone, and then America/New_York if not available.
+It creates composite images with the back camera as the main image and front camera overlaid in the corner with rounded edges and a black border, just like BeReal shows them.
 
 ## Examples
 
@@ -129,7 +121,7 @@ The web UI is pretty nice - shows both images side by side, you click the one th
 
 **File Naming**: All images get descriptive names so you know what's what:
 - `2022-09-10_16-35-30_main-view.webp` (back camera)
-- `2022-09-10_16-35-30_selfie-view.webp` (front camera) 
+- `2022-09-10_16-35-30_selfie-view.webp` (front camera)
 - `2022-09-10_16-35-30_composited.webp` (combined image with selfie overlaid)
 
 ## What Gets Exported
@@ -147,10 +139,6 @@ All images get proper EXIF metadata with:
 - Composited images with front camera overlaid on back camera (BeReal style with rounded corners and black border)
 
 The script automatically detects duplicate content between posts and memories to avoid saving the same image twice.
-
-## Performance
-
-Uses parallel processing with configurable worker threads (default 4) for faster exports. Progress bars show real-time status. On a decent machine, expect to process hundreds of images per minute. If you have a fast SSD and good CPU, try bumping up `--max-workers` to 8 or more.
 
 ## License
 
